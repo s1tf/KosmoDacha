@@ -67,12 +67,12 @@ label start:
     show screen screen_spirit
 
     # Выводим на экран описание дня
-    $ day_description = data['days'][str(day)]['description']
+    $ day_description = data['days'][day-1]['description']
     '[day_description]'
 
     # Если в этот день есть специальное событие, отображаем его
     # Если специального события нет, выбираем событие из пула случайных событий
-    $ actions = data['days'][str(day)].get('actions')
+    $ actions = data['days'][day-1].get('actions')
     if actions:
         pass
     else:
@@ -83,53 +83,60 @@ label start:
         $ actions = data['actions']
 
     # Выбираем варианты действий
-    $ action0 = actions[0]
-    $ action1 = actions[1]
-    $ action2 = actions[2]
+    $ text0 = actions[0]['input_text']
+    $ text1 = actions[1]['input_text']
+    $ text2 = actions[2]['input_text']
     menu:
 
-        '[action0[0]]':
-            $ action = action0
+        '[text0]':
+            $ action = actions      [0]
 
-        '[action1[0]]':
-            $ action = action1
+        '[text1]':
+            $ action = actions[1]
 
-        '[action2[0]]':
-            $ action = action2
+        '[text2]':
+            $ action = actions[2]
 
 # Если у выполненного действия было дочернее действие, добавляем дочернее действие в пул всех действий
-if len(action) == 5:
-    $ data['actions'].append(action[4])
+if action.get('child'):
+    $ data['actions'].append(action['child'])
 
 # Удаляем выполненное действие из общего пула действий
-if not data['days'][str(day)].get('actions'):
+if not data['days'][day-1].get('actions'):
     $ data['actions'].remove(action)
 
 # Выводим на экран результат операции
-"[action[1]]"
+$ text = action['output_text']
+'[text]'
 
 # Выводим на экран изменения в бодрости тела
 $ stat_change = ''
-if action[2]:
-    $ number = '{color=#FF0000}' + f'{action[2]}' +'{/color}' if action[2] < 0 else '{color=#7CFC00}' + f'+{action[2]}' +'{/color}'
-    $ stat_change += f'Бодрость тела: {number}. '
+if action.get('health'):
+    if action['health'] < 0:
+        $ color = '{color=' + COLOR_RED + '}'
+    else:
+        $ color = '{color=' + COLOR_GREEN + '}+'
+    $ stat_change += f'Бодрость тела: {color}{action["health"]}' + '{/color}. '
 
 # Выводим на экран изменения в бодрости духа
-if action[3]:
-    $ number = '{color=#FF0000}' + f'{action[3]}' +'{/color}' if action[3] < 0 else '{color=#7CFC00}' + f'+{action[3]}' +'{/color}'
-    $ stat_change += f'Бодрость духа: {number}. '
+if action.get('spirit'):
+    if action['spirit'] < 0:
+        $ color = '{color=' + COLOR_RED + '}'
+    else:
+        $ color = '{color=' + COLOR_GREEN + '}+'
+    $ stat_change += f'Бодрость духа: {color}{action["spirit"]}' + '{/color}. '
 
 # Меняем статы игрока, сообщаем ему об этом
 '[stat_change]'
-if health + action[2] < 0:
+if health + action['health'] < 0:
     $ health = 0
 else:
-    $ health += action[2]
+    $ health += action['health']
 
-if spirit + action[3] < 0:
+if spirit + action['spirit'] < 0:
     $ spirit = 0
 else:
-    $ spirit += action[3]
+    $ spirit += action['spirit']
 
 # Если статы игрока упали до нуля, конец игры
 if health < 1 or spirit < 1:
