@@ -32,6 +32,7 @@ default data = copy.deepcopy(data_on_start)
 default day = 1
 default health = 50
 default spirit = 50
+default items = []  # инвентарь игрока
 
 # Экран количества дней
 screen screen_day():
@@ -83,19 +84,27 @@ label start:
         $ actions = data['actions']
 
     # Выбираем варианты действий
-    $ text0 = actions[0]['input_text']
-    $ text1 = actions[1]['input_text']
-    $ text2 = actions[2]['input_text']
+    $ actions_ = []
+    $ i = 0
+    while i < len(actions):
+        $ a = actions[i]
+        if (a.get('item_required') and a['item_required'] in items) or not a.get('item_required'):
+            $ actions_.append(a)
+        $ i += 1
+
+    $ text0 = actions_[0]['input_text']
+    $ text1 = actions_[1]['input_text']
+    $ text2 = actions_[2]['input_text']
     menu:
 
         '[text0]':
-            $ action = actions      [0]
+            $ action = actions_[0]
 
         '[text1]':
-            $ action = actions[1]
+            $ action = actions_[1]
 
         '[text2]':
-            $ action = actions[2]
+            $ action = actions_[2]
 
 # Если у выполненного действия было дочернее действие, добавляем дочернее действие в пул всех действий
 if action.get('child'):
